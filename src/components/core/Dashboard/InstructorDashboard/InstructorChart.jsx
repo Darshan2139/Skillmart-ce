@@ -25,7 +25,7 @@ export default function InstructorChart({ courses }) {
     labels: courses.map((course) => course.courseName),
     datasets: [
       {
-        data: courses.map((course) => course.totalStudentsEnrolled),
+        data: courses.map((course) => course.totalStudentsEnroled || 0),
         backgroundColor: generateRandomColors(courses.length),
       },
     ],
@@ -36,7 +36,7 @@ export default function InstructorChart({ courses }) {
     labels: courses.map((course) => course.courseName),
     datasets: [
       {
-        data: courses.map((course) => course.totalAmountGenerated),
+        data: courses.map((course) => course.totalAmountGenerated || 0),
         backgroundColor: generateRandomColors(courses.length),
       },
     ],
@@ -45,6 +45,18 @@ export default function InstructorChart({ courses }) {
   // Options for the chart
   const options = {
     maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'right',
+        labels: {
+          color: '#F1F2FF',
+          usePointStyle: true,
+          pointStyle: 'circle',
+          padding: 20,
+        }
+      }
+    }
   }
 
   return (

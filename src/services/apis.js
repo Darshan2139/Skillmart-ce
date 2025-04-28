@@ -1,4 +1,4 @@
-const BASE_URL = "https://localhost:4000/api/v1"
+const BASE_URL = "http://localhost:4000/api/v1"
 
 // AUTH ENDPOINTS
 export const endpoints = {
@@ -41,12 +41,13 @@ export const courseEndpoints = {
   GET_FULL_COURSE_DETAILS_AUTHENTICATED:
     BASE_URL + "/course/getFullCourseDetails",
   LECTURE_COMPLETION_API: BASE_URL + "/course/updateCourseProgress",
-  CREATE_RATING_API: BASE_URL + "/course/createRating",
 }
 
 // RATINGS AND REVIEWS
 export const ratingsEndpoints = {
-  REVIEWS_DETAILS_API: BASE_URL + "/course/getReviews",
+  REVIEWS_DETAILS_API: BASE_URL + "/rating/getReviews",
+  GET_AVERAGE_RATING_API: BASE_URL + "/rating/getAverageRating",
+  CREATE_RATING_API: BASE_URL + "/rating/createRating",
 }
 
 // CATAGORIES API

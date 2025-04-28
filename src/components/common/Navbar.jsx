@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { AiOutlineMenu, AiOutlineShoppingCart } from "react-icons/ai"
+import { AiOutlineMenu, AiOutlineShoppingCart, AiOutlineClose } from "react-icons/ai"
 import { BsChevronDown } from "react-icons/bs"
 import { useSelector } from "react-redux"
 import { Link, matchPath, useLocation } from "react-router-dom"
@@ -16,6 +16,7 @@ function Navbar() {
   const { user } = useSelector((state) => state.profile)
   const { totalItems } = useSelector((state) => state.cart)
   const location = useLocation()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const [subLinks, setSubLinks] = useState([])
   const [loading, setLoading] = useState(false)
@@ -126,24 +127,137 @@ function Navbar() {
           )}
           {token === null && (
             <Link to="/login">
-              <button className="rounded-[8px] border border-richblack-700 bg-richblack-800 px-[12px] py-[8px] text-richblack-100">
+              <button className="rounded-[8px] border border-richblack-700 bg-richblack-800 px-[12px] py-[8px] text-richblack-100 transition-all duration-150 hover:bg-richblack-700 hover:text-yellow-25">
                 Log in
               </button>
             </Link>
           )}
           {token === null && (
             <Link to="/signup">
-              <button className="rounded-[8px] border border-richblack-700 bg-richblack-800 px-[12px] py-[8px] text-richblack-100">
+              <button className="rounded-[8px] border border-richblack-700 bg-richblack-800 px-[12px] py-[8px] text-richblack-100 transition-all duration-150 hover:bg-richblack-700 hover:text-yellow-25">
                 Sign up
               </button>
             </Link>
           )}
           {token !== null && <ProfileDropdown />}
         </div>
-        <button className="mr-4 md:hidden">
-          <AiOutlineMenu fontSize={24} fill="#AFB2BF" />
+        <button 
+          className="mr-4 md:hidden"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? (
+            <AiOutlineClose fontSize={24} fill="#AFB2BF" />
+          ) : (
+            <AiOutlineMenu fontSize={24} fill="#AFB2BF" />
+          )}
         </button>
       </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 z-[9998] bg-black/40 transition-opacity duration-200"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Dropdown panel */}
+          <div className="fixed top-0 right-0 h-full w-[80vw] max-w-xs z-[9999] bg-richblack-900 rounded-l-2xl shadow-2xl border-l border-richblack-700 flex flex-col justify-between animate-slidein">
+            {/* Close icon */}
+            <div className="flex justify-end p-4">
+              <button onClick={() => setMobileMenuOpen(false)}>
+                <AiOutlineClose fontSize={28} fill="#AFB2BF" />
+              </button>
+            </div>
+            {/* Cart and Profile at top */}
+            <div className="flex flex-row items-center gap-4 px-6 pb-2">
+              {user && user?.accountType !== ACCOUNT_TYPE.INSTRUCTOR && (
+                <Link to="/dashboard/cart" className="relative" onClick={() => setMobileMenuOpen(false)}>
+                  <AiOutlineShoppingCart className="text-2xl text-richblack-100" />
+                  {totalItems > 0 && (
+                    <span className="absolute -bottom-2 -right-2 grid h-5 w-5 place-items-center overflow-hidden rounded-full bg-richblack-600 text-center text-xs font-bold text-yellow-100">
+                      {totalItems}
+                    </span>
+                  )}
+                </Link>
+              )}
+              <ProfileDropdown mobile={true} />
+            </div>
+            {/* Profile and links */}
+            <div className="flex flex-col items-start px-6 gap-6 flex-1 overflow-y-auto">
+              <ul className="flex flex-col gap-4 text-richblack-25 w-full">
+                {NavbarLinks.map((link, index) => (
+                  <li key={index} className="text-left w-full">
+                    {link.title === "Catalog" ? (
+                      <div className="flex flex-col items-start gap-2 w-full">
+                        <div className="flex cursor-pointer items-center gap-1">
+                          <p>{link.title}</p>
+                          <BsChevronDown />
+                        </div>
+                        <div className="flex flex-col gap-2 pl-4">
+                          {loading ? (
+                            <p className="text-left">Loading...</p>
+                          ) : (subLinks && subLinks.length) ? (
+                            subLinks
+                              ?.filter((subLink) => subLink?.courses?.length > 0)
+                              ?.map((subLink, i) => (
+                                <Link
+                                  key={i}
+                                  to={`/catalog/${subLink.name
+                                    .split(" ")
+                                    .join("-")
+                                    .toLowerCase()}`}
+                                  className="rounded-lg bg-transparent py-2 block transition-all duration-150 hover:bg-richblack-700 hover:text-yellow-25"
+                                  onClick={() => setMobileMenuOpen(false)}
+                                >
+                                  <p>{subLink.name}</p>
+                                </Link>
+                              ))
+                          ) : (
+                            <p className="text-left">No Courses Found</p>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <Link 
+                        to={link?.path}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block w-full rounded-lg transition-all duration-150 hover:bg-richblack-700 hover:text-yellow-25"
+                      >
+                        <p className={matchRoute(link?.path) ? "text-yellow-25" : "text-richblack-25"}>
+                          {link.title}
+                        </p>
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {token === null && (
+                <div className="flex gap-4 mt-4">
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <button className="rounded-[8px] border border-richblack-700 bg-richblack-800 px-[12px] py-[8px] text-richblack-100 transition-all duration-150 hover:bg-richblack-700 hover:text-yellow-25">
+                      Log in
+                    </button>
+                  </Link>
+                  <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
+                    <button className="rounded-[8px] border border-richblack-700 bg-richblack-800 px-[12px] py-[8px] text-richblack-100 transition-all duration-150 hover:bg-richblack-700 hover:text-yellow-25">
+                      Sign up
+                    </button>
+                  </Link>
+                </div>
+              )}
+            </div>
+            {/* Slide-in animation */}
+            <style>{`
+              @keyframes slidein {
+                from { transform: translateX(100%); opacity: 0.5; }
+                to { transform: translateX(0); opacity: 1; }
+              }
+              .animate-slidein { animation: slidein 0.25s cubic-bezier(.4,0,.2,1); }
+            `}</style>
+          </div>
+        </>
+      )}
     </div>
   )
 }

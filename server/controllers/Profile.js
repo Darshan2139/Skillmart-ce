@@ -211,28 +211,54 @@ exports.getEnrolledCourses = async (req, res) => {
 
 exports.instructorDashboard = async (req, res) => {
   try {
+    // Find all courses by the instructor
     const courseDetails = await Course.find({ instructor: req.user.id })
+      .populate('studentsEnroled')
+      .exec();
 
+    if (!courseDetails) {
+      return res.status(200).json({
+        success: true,
+        courses: []
+      });
+    }
+
+    // Calculate statistics for each course
     const courseData = courseDetails.map((course) => {
-      const totalStudentsEnrolled = course.studentsEnroled.length
-      const totalAmountGenerated = totalStudentsEnrolled * course.price
+      const totalStudentsEnroled = course.studentsEnroled?.length || 0;
+      const totalAmountGenerated = totalStudentsEnroled * course.price;
 
-      // Create a new object with the additional fields
-      const courseDataWithStats = {
+      return {
         _id: course._id,
         courseName: course.courseName,
         courseDescription: course.courseDescription,
-        // Include other course properties as needed
-        totalStudentsEnrolled,
+        totalStudentsEnroled,
         totalAmountGenerated,
+        thumbnail: course.thumbnail,
+        price: course.price,
+        studentsEnroled: course.studentsEnroled || []
+      };
+    });
+
+    // Calculate overall statistics
+    const totalStudents = courseData.reduce((acc, curr) => acc + curr.totalStudentsEnroled, 0);
+    const totalAmount = courseData.reduce((acc, curr) => acc + curr.totalAmountGenerated, 0);
+
+    res.status(200).json({
+      success: true,
+      courses: courseData,
+      stats: {
+        totalStudents,
+        totalAmount,
+        totalCourses: courseData.length
       }
-
-      return courseDataWithStats
-    })
-
-    res.status(200).json({ courses: courseData })
+    });
   } catch (error) {
-    console.error(error)
-    res.status(500).json({ message: "Server Error" })
+    console.error("Instructor Dashboard Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error while fetching instructor dashboard data",
+      error: error.message
+    });
   }
 }

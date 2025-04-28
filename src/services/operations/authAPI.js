@@ -21,11 +21,8 @@ export function sendOtp(email, navigate) {
     try {
       const response = await apiConnector("POST", SENDOTP_API, {
         email,
-        checkUserPresent: true,
       })
       console.log("SENDOTP API RESPONSE............", response)
-
-      console.log(response.data.success)
 
       if (!response.data.success) {
         throw new Error(response.data.message)
@@ -35,7 +32,7 @@ export function sendOtp(email, navigate) {
       navigate("/verify-email")
     } catch (error) {
       console.log("SENDOTP API ERROR............", error)
-      toast.error("Could Not Send OTP")
+      toast.error(error.response?.data?.message || "Could Not Send OTP")
     }
     dispatch(setLoading(false))
     toast.dismiss(toastId)
@@ -75,8 +72,11 @@ export function signUp(
       navigate("/login")
     } catch (error) {
       console.log("SIGNUP API ERROR............", error)
-      toast.error("Signup Failed")
-      navigate("/signup")
+      toast.error(error.response?.data?.message || "Signup Failed")
+      
+      if (error.response?.status === 500) {
+        navigate("/signup")
+      }
     }
     dispatch(setLoading(false))
     toast.dismiss(toastId)
@@ -129,8 +129,6 @@ export function logout(navigate) {
     navigate("/")
   }
 }
-
-
 
 export function getPasswordResetToken(email , setEmailSent) {
   return async(dispatch) => {

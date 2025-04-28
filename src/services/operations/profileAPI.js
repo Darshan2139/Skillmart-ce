@@ -67,21 +67,40 @@ export async function getUserEnrolledCourses(token) {
 
 export async function getInstructorData(token) {
   const toastId = toast.loading("Loading...");
-  let result = [];
-  try{
-    const response = await apiConnector("GET", GET_INSTRUCTOR_DATA_API, null, 
-    {
-      Authorization: `Bearer ${token}`,
-    })
+  try {
+    const response = await apiConnector(
+      "GET", 
+      GET_INSTRUCTOR_DATA_API, 
+      null, 
+      {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      }
+    )
 
-    console.log("GET_INSTRUCTOR_API_RESPONSE", response);
-    result = response?.data?.courses
-
+    if (!response?.data?.success) {
+      throw new Error(response?.data?.message || "Could not fetch instructor data")
+    }
+    
+    return {
+      courses: response?.data?.courses || [],
+      stats: response?.data?.stats || {
+        totalStudents: 0,
+        totalAmount: 0,
+        totalCourses: 0
+      }
+    };
+  } catch (error) {
+    console.log("GET_INSTRUCTOR_API ERROR:", error)
+    return {
+      courses: [],
+      stats: {
+        totalStudents: 0,
+        totalAmount: 0,
+        totalCourses: 0
+      }
+    };
+  } finally {
+    toast.dismiss(toastId);
   }
-  catch(error) {
-    console.log("GET_INSTRUCTOR_API ERROR", error);
-    toast.error("Could not Get Instructor Data")
-  }
-  toast.dismiss(toastId);
-  return result;
 }

@@ -12,62 +12,93 @@ const CourseProgress = require("../models/CourseProgress")
 
 // Capture the payment and initiate the Razorpay order
 exports.capturePayment = async (req, res) => {
-  const { courses } = req.body
-  const userId = req.user.id
-  if (courses.length === 0) {
-    return res.json({ success: false, message: "Please Provide Course ID" })
-  }
-
-  let total_amount = 0
-
-  for (const course_id of courses) {
-    let course
-    try {
-      // Find the course by its ID
-      course = await Course.findById(course_id)
-
-      // If the course is not found, return an error
-      if (!course) {
-        return res
-          .status(200)
-          .json({ success: false, message: "Could not find the Course" })
-      }
-
-      // Check if the user is already enrolled in the course
-      const uid = new mongoose.Types.ObjectId(userId)
-      if (course.studentsEnroled.includes(uid)) {
-        return res
-          .status(200)
-          .json({ success: false, message: "Student is already Enrolled" })
-      }
-
-      // Add the price of the course to the total amount
-      total_amount += course.price
-    } catch (error) {
-      console.log(error)
-      return res.status(500).json({ success: false, message: error.message })
-    }
-  }
-
-  const options = {
-    amount: total_amount * 100,
-    currency: "INR",
-    receipt: Math.random(Date.now()).toString(),
-  }
-
   try {
-    // Initiate the payment using Razorpay
-    const paymentResponse = await instance.orders.create(options)
-    console.log(paymentResponse)
-    res.json({
-      success: true,
-      data: paymentResponse,
-    })
+    const { courses } = req.body;
+    const userId = req.user.id;
+    
+    if (!courses || !Array.isArray(courses) || courses.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Please provide valid course IDs" 
+      });
+    }
+
+    let total_amount = 0;
+
+    // Process each course
+    for (const courseId of courses) {
+      try {
+        // Find the course by its ID
+        const course = await Course.findById(courseId);
+        if (!course) {
+          return res.status(404).json({ 
+            success: false, 
+            message: `Could not find course with id: ${courseId}` 
+          });
+        }
+
+        // Check if user is already enrolled
+        const uid = new mongoose.Types.ObjectId(userId);
+        if (course.studentsEnroled && course.studentsEnroled.includes(uid)) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `You are already enrolled in course: ${course.courseName}` 
+          });
+        }
+
+        // Add the price
+        total_amount += course.price;
+
+      } catch (error) {
+        console.error("Error processing course:", error);
+        return res.status(500).json({ 
+          success: false, 
+          message: "Error processing course information"
+        });
+      }
+    }
+
+    if (total_amount === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Total amount cannot be zero"
+      });
+    }
+
+    // Create Razorpay order
+    try {
+      const options = {
+        amount: Math.round(total_amount * 100),
+        currency: "INR",
+        receipt: `receipt_${Math.random().toString(36).substring(7)}`,
+        notes: {
+          userId: userId.toString()
+        }
+      };
+
+      const order = await instance.orders.create(options);
+
+      return res.json({
+        success: true,
+        message: {
+          orderId: order.id,
+          amount: order.amount,
+          currency: order.currency
+        }
+      });
+    } catch (error) {
+      console.error("Razorpay Order Error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Could not create order"
+      });
+    }
   } catch (error) {
-    console.log(error)
-    res
-      .status(500)
-      .json({ success: false, message: "Could not initiate order." })
+    console.error("Payment Capture Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Could not process payment request"
+    });
   }
 }
 

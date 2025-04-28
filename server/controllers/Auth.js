@@ -23,6 +23,7 @@ exports.signup = async (req, res) => {
       contactNumber,
       otp,
     } = req.body
+
     // Check if All Details are there or not
     if (
       !firstName ||
@@ -37,12 +38,12 @@ exports.signup = async (req, res) => {
         message: "All Fields are required",
       })
     }
+
     // Check if password and confirm password match
     if (password !== confirmPassword) {
       return res.status(400).json({
         success: false,
-        message:
-          "Password and Confirm Password do not match. Please try again.",
+        message: "Password and Confirm Password do not match. Please try again.",
       })
     }
 
@@ -75,27 +76,25 @@ exports.signup = async (req, res) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create the user
-    let approved = ""
-    approved === "Instructor" ? (approved = false) : (approved = true)
-
     // Create the Additional Profile For User
     const profileDetails = await Profile.create({
       gender: null,
       dateOfBirth: null,
       about: null,
-      contactNumber: null,
+      contactNumber: contactNumber || null,
     })
+
+    // Create the user with a default image
     const user = await User.create({
       firstName,
       lastName,
       email,
       contactNumber,
       password: hashedPassword,
-      accountType: accountType,
-      approved: approved,
+      accountType: accountType || "Student", // Default to Student if not provided
+      approved: true,
       additionalDetails: profileDetails._id,
-      image: "",
+      image: `https://api.dicebear.com/5.x/initials/svg?seed=${firstName} ${lastName}`, // Default avatar
     })
 
     return res.status(200).json({
@@ -108,6 +107,7 @@ exports.signup = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "User cannot be registered. Please try again.",
+      error: error.message, // Include the actual error message for debugging
     })
   }
 }

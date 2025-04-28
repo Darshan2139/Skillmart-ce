@@ -1,67 +1,114 @@
-const RatingAndReview = require("../models/RatingAndRaview");
+const RatingAndReview = require("../models/RatingAndReview");
 const Course = require("../models/Course");
 const { mongo, default: mongoose } = require("mongoose");
 
 //createRating
 exports.createRating = async (req, res) => {
-    try{
-
-        //get user id
+    try {
+        // Get user id
         const userId = req.user.id;
-        //fetchdata from req body
+        // Fetch data from req body
         const {rating, review, courseId} = req.body;
-        //check if user is enrolled or not
-        const courseDetails = await Course.findOne(
-                                    {_id:courseId,
-                                    studentsEnrolled: {$elemMatch: {$eq: userId} },
-                                });
+        
+        console.log("Received request data:", { 
+            userId, 
+            courseId, 
+            rating, 
+            review 
+        });
 
-        if(!courseDetails) {
-            return res.status(404).json({
-                success:false,
-                message:'Student is not enrolled in the course',
+        // Basic validation
+        if (!rating || !review || !courseId) {
+            return res.status(400).json({
+                success: false,
+                message: 'All fields are required: rating, review, and courseId'
             });
         }
-        //check if user already reviewed the course
-        const alreadyReviewed = await RatingAndReview.findOne({
-                                                user:userId,
-                                                course:courseId,
-                                            });
-        if(alreadyReviewed) {
-                    return res.status(403).json({
-                        success:false,
-                        message:'Course is already reviewed by the user',
-                    });
-                }
-        //create rating and review
+
+        // Convert rating to number if it's a string
+        const ratingNumber = Number(rating);
+
+        // Validate rating value
+        if (isNaN(ratingNumber) || ratingNumber < 1 || ratingNumber > 5) {
+            return res.status(400).json({
+                success: false,
+                message: 'Rating must be a number between 1 and 5'
+            });
+        }
+
+        // Find course and check enrollment
+        const course = await Course.findById(courseId)
+            .populate('studentsEnroled', '_id')
+            .exec();
+        
+        if (!course) {
+            return res.status(404).json({
+                success: false,
+                message: 'Course not found'
+            });
+        }
+
+        // Check if user is enrolled
+        const isEnrolled = course.studentsEnroled?.some(
+            student => student._id.toString() === userId.toString()
+        );
+
+        console.log("Enrollment check:", {
+            userId: userId.toString(),
+            isEnrolled,
+            enrolledStudents: course.studentsEnroled?.map(s => s._id.toString()) || [],
+            totalEnrolled: course.studentsEnroled?.length || 0
+        });
+
+        if (!isEnrolled) {
+            return res.status(403).json({
+                success: false,
+                message: 'You must be enrolled in this course to leave a review'
+            });
+        }
+
+        // Check if user has already reviewed this course
+        const existingReview = await RatingAndReview.findOne({
+            user: userId,
+            course: courseId
+        });
+
+        if (existingReview) {
+            return res.status(403).json({
+                success: false,
+                message: 'You have already reviewed this course'
+            });
+        }
+
+        // Create the review
         const ratingReview = await RatingAndReview.create({
-                                        rating, review, 
-                                        course:courseId,
-                                        user:userId,
-                                    });
-       
-        //update course with this rating/review
-        const updatedCourseDetails = await Course.findByIdAndUpdate({_id:courseId},
-                                    {
-                                        $push: {
-                                            ratingAndReviews: ratingReview._id,
-                                        }
-                                    },
-                                    {new: true});
-        console.log(updatedCourseDetails);
-        //return response
+            rating: ratingNumber,
+            review,
+            course: courseId,
+            user: userId
+        });
+
+        // Update course with the new review
+        await Course.findByIdAndUpdate(
+            courseId,
+            {
+                $push: { ratingAndReviews: ratingReview._id }
+            },
+            { new: true }
+        );
+
         return res.status(200).json({
-            success:true,
-            message:"Rating and Review created Successfully",
-            ratingReview,
-        })
-    }
-    catch(error) {
-        console.log(error);
+            success: true,
+            message: "Review submitted successfully",
+            data: ratingReview
+        });
+
+    } catch (error) {
+        console.error("Error in createRating:", error);
         return res.status(500).json({
-            success:false,
-            message:error.message,
-        })
+            success: false,
+            message: "Failed to submit review. Please try again."
+        });
     }
 }
 

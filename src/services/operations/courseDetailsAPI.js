@@ -3,7 +3,7 @@ import { toast } from "react-hot-toast"
 import { updateCompletedLectures } from "../../slices/viewCourseSlice"
 // import { setLoading } from "../../slices/profileSlice";
 import { apiConnector } from "../apiconnector"
-import { courseEndpoints } from "../apis"
+import { courseEndpoints, ratingsEndpoints } from "../apis"
 
 const {
   COURSE_DETAILS_API,
@@ -20,9 +20,14 @@ const {
   GET_ALL_INSTRUCTOR_COURSES_API,
   DELETE_COURSE_API,
   GET_FULL_COURSE_DETAILS_AUTHENTICATED,
-  CREATE_RATING_API,
   LECTURE_COMPLETION_API,
 } = courseEndpoints
+
+const {
+  CREATE_RATING_API,
+  REVIEWS_DETAILS_API,
+  GET_AVERAGE_RATING_API,
+} = ratingsEndpoints
 
 export const getAllCourses = async () => {
   const toastId = toast.loading("Loading...")
@@ -260,48 +265,65 @@ export const deleteSubSection = async (data, token) => {
 }
 
 // fetching all courses under a specific instructor
-export const fetchInstructorCourses = async (token) => {
-  let result = []
+export async function fetchInstructorCourses(token) {
   const toastId = toast.loading("Loading...")
   try {
     const response = await apiConnector(
       "GET",
-      GET_ALL_INSTRUCTOR_COURSES_API,
+      courseEndpoints.GET_ALL_INSTRUCTOR_COURSES_API,
       null,
       {
         Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
       }
     )
-    console.log("INSTRUCTOR COURSES API RESPONSE............", response)
+
     if (!response?.data?.success) {
-      throw new Error("Could Not Fetch Instructor Courses")
+      throw new Error(response?.data?.message || "Could not fetch courses")
     }
-    result = response?.data?.data
+
+    return response?.data?.data || [];
   } catch (error) {
-    console.log("INSTRUCTOR COURSES API ERROR............", error)
-    toast.error(error.message)
+    console.log("FETCH_INSTRUCTOR_COURSES_API ERROR:", error)
+    // Don't show error toast for initial load
+    // toast.error(error.message || "Could not fetch courses")
+    return [];
+  } finally {
+    toast.dismiss(toastId)
   }
-  toast.dismiss(toastId)
-  return result
 }
 
 // delete a course
-export const deleteCourse = async (data, token) => {
-  const toastId = toast.loading("Loading...")
+export const deleteCourse = async (courseId, token) => {
+  const toastId = toast.loading("Deleting course...")
   try {
-    const response = await apiConnector("DELETE", DELETE_COURSE_API, data, {
-      Authorization: `Bearer ${token}`,
-    })
+    const response = await apiConnector(
+      "DELETE",
+      courseEndpoints.DELETE_COURSE_API,
+      {
+        courseId: courseId
+      },
+      {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    )
+    
     console.log("DELETE COURSE API RESPONSE............", response)
+    
     if (!response?.data?.success) {
-      throw new Error("Could Not Delete Course")
+      throw new Error(response?.data?.message || "Could not delete course")
     }
-    toast.success("Course Deleted")
+    
+    toast.success("Course Deleted Successfully")
+    return true
   } catch (error) {
     console.log("DELETE COURSE API ERROR............", error)
-    toast.error(error.message)
+    toast.error(error?.response?.data?.message || "Could not delete course")
+    return false
+  } finally {
+    toast.dismiss(toastId)
   }
-  toast.dismiss(toastId)
 }
 
 // get full details of a course
@@ -366,23 +388,47 @@ export const markLectureAsComplete = async (data, token) => {
 
 // create a rating for course
 export const createRating = async (data, token) => {
-  const toastId = toast.loading("Loading...")
-  let success = false
+  const toastId = toast.loading("Submitting review...")
   try {
+    console.log("Sending rating request:", {
+      endpoint: CREATE_RATING_API,
+      data: data
+    })
+
     const response = await apiConnector("POST", CREATE_RATING_API, data, {
       Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
     })
-    console.log("CREATE RATING API RESPONSE............", response)
+
+    console.log("Create rating response:", response)
+
     if (!response?.data?.success) {
-      throw new Error("Could Not Create Rating")
+      throw new Error(response?.data?.message || "Could not submit review")
     }
-    toast.success("Rating Created")
-    success = true
+
+    toast.success("Review submitted successfully")
+    return response.data
+
   } catch (error) {
-    success = false
-    console.log("CREATE RATING API ERROR............", error)
-    toast.error(error.message)
+    console.error("Create rating error:", {
+      error: error,
+      response: error.response
+    })
+
+    // Handle specific error cases
+    if (error.response?.status === 403) {
+      toast.error("You must be enrolled in this course to leave a review")
+    } else if (error.response?.status === 400) {
+      toast.error(error.response?.data?.message || "Invalid review data")
+    } else {
+      toast.error(error.message || "Failed to submit review")
+    }
+
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message
+    }
+  } finally {
+    toast.dismiss(toastId)
   }
-  toast.dismiss(toastId)
-  return success
 }

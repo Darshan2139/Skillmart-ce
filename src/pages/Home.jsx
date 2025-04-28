@@ -91,7 +91,7 @@ function Home() {
               active: false,
             }}
             codeColor={"text-yellow-25"}
-            codeblock={`<!DOCTYPE html>\n <html lang="en">\n<head>\n<title>This is myPage</title>\n</head>\n<body>\n<h1><a href="/">Header</a></h1>\n<nav> <a href="/one">One</a> <a href="/two">Two</a> <a href="/three">Three</a>\n</nav>\n</body>`}
+            codeblock={`<!DOCTYPE html>\n<head><meta charset="UTF-8"><title>SkillMart Team</title></head>\n<body>\n<h1>SkillMart</h1>\n<h2>Frontend Team</h2><ul><li>Darshan</li><li>Dharmik</li></ul>\n<h2>Backend Team</h2><ul><li>Mubin</li><li>Rohit</li></ul>\n</body>\n</html>`}
             backgroundGradient={<div className="codeblock1 absolute"></div>}
           />
         </div>
@@ -158,7 +158,7 @@ function Home() {
             </div>
             <div className="flex flex-col items-start gap-10 lg:w-[40%]">
               <div className="text-[16px]">
-                The modern StudyNotion is the dictates its own terms. Today, to
+                The modern SkillMart is the dictates its own terms. Today, to
                 be a competitive specialist requires more than professional
                 skills.
               </div>

@@ -6,6 +6,7 @@ const User = require("../models/User")
 const { uploadImageToCloudinary } = require("../utils/imageUploader")
 const CourseProgress = require("../models/CourseProgress")
 const { convertSecondsToDuration } = require("../utils/secToDuration")
+const mongoose = require("mongoose")
 // Function to create a new course
 exports.createCourse = async (req, res) => {
   try {
@@ -210,7 +211,7 @@ exports.getAllCourses = async (req, res) => {
         thumbnail: true,
         instructor: true,
         ratingAndReviews: true,
-        studentsEnrolled: true,
+        studentsEnroled: true,
       }
     )
       .populate("instructor")
@@ -357,6 +358,7 @@ exports.getFullCourseDetails = async (req, res) => {
       })
       .populate("category")
       .populate("ratingAndReviews")
+      .populate("studentsEnroled")
       .populate({
         path: "courseContent",
         populate: {
@@ -443,50 +445,97 @@ exports.getInstructorCourses = async (req, res) => {
 exports.deleteCourse = async (req, res) => {
   try {
     const { courseId } = req.body
+    const userId = req.user.id
+
+    console.log("Attempting to delete course:", courseId, "by user:", userId)
+
+    if (!courseId) {
+      return res.status(400).json({
+        success: false,
+        message: "Course ID is required"
+      })
+    }
 
     // Find the course
     const course = await Course.findById(courseId)
     if (!course) {
-      return res.status(404).json({ message: "Course not found" })
-    }
-
-    // Unenroll students from the course
-    const studentsEnrolled = course.studentsEnroled
-    for (const studentId of studentsEnrolled) {
-      await User.findByIdAndUpdate(studentId, {
-        $pull: { courses: courseId },
+      return res.status(404).json({
+        success: false,
+        message: "Course not found"
       })
     }
 
-    // Delete sections and sub-sections
-    const courseSections = course.courseContent
-    for (const sectionId of courseSections) {
-      // Delete sub-sections of the section
-      const section = await Section.findById(sectionId)
-      if (section) {
-        const subSections = section.subSection
-        for (const subSectionId of subSections) {
-          await SubSection.findByIdAndDelete(subSectionId)
-        }
-      }
-
-      // Delete the section
-      await Section.findByIdAndDelete(sectionId)
+    // Verify that the user deleting the course is the instructor
+    if (course.instructor.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete this course"
+      })
     }
 
-    // Delete the course
-    await Course.findByIdAndDelete(courseId)
+    // Start a transaction
+    const session = await mongoose.startSession()
+    session.startTransaction()
 
-    return res.status(200).json({
-      success: true,
-      message: "Course deleted successfully",
-    })
+    try {
+      // Unenroll students from the course
+      if (course.studentsEnroled && course.studentsEnroled.length > 0) {
+        await User.updateMany(
+          { _id: { $in: course.studentsEnroled } },
+          { $pull: { courses: courseId } },
+          { session }
+        )
+      }
+
+      // Delete sections and sub-sections
+      if (course.courseContent && course.courseContent.length > 0) {
+        // Get all sections
+        const sections = await Section.find({
+          _id: { $in: course.courseContent }
+        }).session(session)
+
+        // Get all subsection IDs
+        const subsectionIds = sections.reduce((acc, section) => {
+          return acc.concat(section.subSection || [])
+        }, [])
+
+        // Delete all subsections
+        if (subsectionIds.length > 0) {
+          await SubSection.deleteMany({
+            _id: { $in: subsectionIds }
+          }).session(session)
+        }
+
+        // Delete all sections
+        await Section.deleteMany({
+          _id: { $in: course.courseContent }
+        }).session(session)
+      }
+
+      // Delete the course
+      await Course.findByIdAndDelete(courseId).session(session)
+
+      // Commit the transaction
+      await session.commitTransaction()
+      
+      return res.status(200).json({
+        success: true,
+        message: "Course deleted successfully"
+      })
+    } catch (error) {
+      // If any error occurs, abort the transaction
+      await session.abortTransaction()
+      throw error
+    } finally {
+      // End the session
+      session.endSession()
+    }
   } catch (error) {
-    console.error(error)
+    console.error("Delete course error:", error)
     return res.status(500).json({
       success: false,
       message: "Server error",
-      error: error.message,
+      error: error.message
     })
   }
 }
