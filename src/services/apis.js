@@ -1,4 +1,5 @@
-const BASE_URL = "http://localhost:4000/api/v1"
+// Base API URL defaults to local development but can be overridden via environment variable
+const BASE_URL = (process.env.REACT_APP_API_BASE_URL || "http://localhost:4000/api/v1").replace(/\/$/, "")
 
 // AUTH ENDPOINTS
 export const endpoints = {
@@ -53,6 +54,10 @@ export const ratingsEndpoints = {
 // CATAGORIES API
 export const categories = {
   CATEGORIES_API: BASE_URL + "/course/showAllCategories",
+  CREATE_CATEGORY_API: BASE_URL + "/course/createCategory",
+  GET_USER_CATEGORIES_API: BASE_URL + "/course/getUserCategories",
+  UPDATE_CATEGORY_API: BASE_URL + "/course/updateCategory/:categoryId",
+  DELETE_CATEGORY_API: BASE_URL + "/course/deleteCategory/:categoryId",
 }
 
 // CATALOG PAGE DATA
@@ -71,3 +76,31 @@ export const settingsEndpoints = {
   CHANGE_PASSWORD_API: BASE_URL + "/auth/changepassword",
   DELETE_PROFILE_API: BASE_URL + "/profile/deleteProfile",
 }
+
+// ASSIGNMENT ENDPOINTS
+export const assignmentEndpoints = {
+  CREATE_ASSIGNMENT_API: BASE_URL + "/assignment/create",
+  GET_INSTRUCTOR_ASSIGNMENTS_API: BASE_URL + "/assignment/instructor",
+  GET_COURSE_ASSIGNMENTS_API: BASE_URL + "/assignment/course/:courseId",
+  GET_STUDENT_ASSIGNMENTS_API: BASE_URL + "/assignment/student/enrolled",
+  GET_ASSIGNMENT_API: BASE_URL + "/assignment/:assignmentId",
+  UPDATE_ASSIGNMENT_API: BASE_URL + "/assignment/:assignmentId",
+  DELETE_ASSIGNMENT_API: BASE_URL + "/assignment/:assignmentId",
+  SUBMIT_ASSIGNMENT_API: BASE_URL + "/assignment/:assignmentId/submit",
+  GET_STUDENT_SUBMISSIONS_API: BASE_URL + "/assignment/:assignmentId/submissions",
+  GET_ALL_SUBMISSIONS_API: BASE_URL + "/assignment/:assignmentId/all-submissions",
+  GRADE_ASSIGNMENT_API: BASE_URL + "/assignment/submission/:submissionId/grade",
+}
+
+// CHATBOT ENDPOINTS
+export const chatbotEndpoints = {
+  CHAT_API: BASE_URL + "/chatbot/chat",
+}
+
+// PROJECT INFO ENDPOINTS
+export const projectInfoEndpoints = {
+  PROJECT_INFO: BASE_URL + "/project/info",
+  ENHANCED_CHAT: BASE_URL + "/project/chat",
+}
+
+export default BASE_URL
