@@ -1,5 +1,9 @@
 // Base API URL defaults to Render deployment but can be overridden via environment variable
-const BASE_URL = (process.env.REACT_APP_API_BASE_URL || "https://skillmart-server.onrender.com/api/v1").replace(/\/$/, "")
+const RAW_BASE_URL = (process.env.REACT_APP_API_BASE_URL || "https://skillmart-server.onrender.com/api/v1").trim()
+const NORMALIZED_BASE = RAW_BASE_URL.replace(/\/$/, "")
+const BASE_URL = NORMALIZED_BASE.endsWith("/api/v1")
+  ? NORMALIZED_BASE
+  : `${NORMALIZED_BASE}/api/v1`
 
 // AUTH ENDPOINTS
 export const endpoints = {
