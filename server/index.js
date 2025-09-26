@@ -75,6 +75,7 @@ app.get("/test-env", (req, res) => {
 		success: true,
 		hasJwtSecret: !!process.env.JWT_SECRET,
 		hasMongoUrl: !!process.env.MONGODB_URL,
+        hasGeminiApiKey: !!process.env.GEMINI_API_KEY,
 		message: 'Environment check'
 	});
 });
