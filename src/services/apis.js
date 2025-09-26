@@ -1,5 +1,5 @@
-// Base API URL defaults to local development but can be overridden via environment variable
-const BASE_URL = (process.env.REACT_APP_API_BASE_URL || "http://localhost:4000/api/v1").replace(/\/$/, "")
+// Base API URL defaults to Render deployment but can be overridden via environment variable
+const BASE_URL = (process.env.REACT_APP_API_BASE_URL || "https://skillmart-server.onrender.com/api/v1").replace(/\/$/, "")
 
 // AUTH ENDPOINTS
 export const endpoints = {
