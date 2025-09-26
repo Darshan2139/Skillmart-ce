@@ -12,6 +12,12 @@ const sectionSchema = new mongoose.Schema({
 			ref: "SubSection",
 		},
 	],
+	assignments: [
+		{
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Assignment",
+		},
+	],
 });
 
 // Export the Section model

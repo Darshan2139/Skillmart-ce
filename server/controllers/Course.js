@@ -180,9 +180,13 @@ exports.editCourse = async (req, res) => {
       .populate("ratingAndReviews")
       .populate({
         path: "courseContent",
-        populate: {
-          path: "subSection",
-        },
+        populate: [
+          { path: "subSection" },
+          {
+            path: "assignments",
+            select: "title type maxMarks dueDate instructions createdAt questions",
+          },
+        ],
       })
       .exec()
 
@@ -298,10 +302,13 @@ exports.getCourseDetails = async (req, res) => {
       .populate("ratingAndReviews")
       .populate({
         path: "courseContent",
-        populate: {
-          path: "subSection",
-          select: "-videoUrl",
-        },
+        populate: [
+          { path: "subSection", select: "-videoUrl" },
+          {
+            path: "assignments",
+            select: "title type maxMarks dueDate instructions createdAt questions",
+          },
+        ],
       })
       .exec()
 
@@ -361,9 +368,13 @@ exports.getFullCourseDetails = async (req, res) => {
       .populate("studentsEnroled")
       .populate({
         path: "courseContent",
-        populate: {
-          path: "subSection",
-        },
+        populate: [
+          { path: "subSection" },
+          {
+            path: "assignments",
+            select: "title type maxMarks dueDate instructions createdAt questions",
+          },
+        ],
       })
       .exec()
 

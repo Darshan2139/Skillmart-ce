@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form"
 import { toast } from "react-hot-toast"
 import { HiOutlineCurrencyRupee } from "react-icons/hi"
 import { MdNavigateNext } from "react-icons/md"
+import { RxCross2 } from "react-icons/rx"
 import { useDispatch, useSelector } from "react-redux"
 
 import {
@@ -10,6 +11,7 @@ import {
   editCourseDetails,
   fetchCourseCategories,
 } from "../../../../../services/operations/courseDetailsAPI"
+import { createCategory } from "../../../../../services/operations/categoryAPI"
 import { setCourse, setStep } from "../../../../../slices/courseSlice"
 import { COURSE_STATUS } from "../../../../../utils/constants"
 import IconBtn from "../../../../common/IconBtn"
@@ -31,6 +33,9 @@ export default function CourseInformationForm() {
   const { course, editCourse } = useSelector((state) => state.course)
   const [loading, setLoading] = useState(false)
   const [courseCategories, setCourseCategories] = useState([])
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState("")
+  const [newCategoryDescription, setNewCategoryDescription] = useState("")
 
   useEffect(() => {
     const getCategories = async () => {
@@ -155,7 +160,34 @@ export default function CourseInformationForm() {
     setLoading(false)
   }
 
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast.error("Category name is required");
+      return;
+    }
+
+    try {
+      const response = await createCategory({
+        name: newCategoryName,
+        description: newCategoryDescription,
+      }, token);
+
+      if (response?.success) {
+        toast.success("Category created successfully");
+        setCourseCategories([...courseCategories, response.data]);
+        setValue("courseCategory", response.data._id);
+        setShowCategoryModal(false);
+        setNewCategoryName("");
+        setNewCategoryDescription("");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to create category");
+      console.error("Error creating category:", error);
+    }
+  }
+
   return (
+    <>
     <form
       onSubmit={handleSubmit(onSubmit)}
       className="space-y-8 rounded-md border-[1px] border-richblack-700 bg-richblack-800 p-6"
@@ -222,9 +254,18 @@ export default function CourseInformationForm() {
       </div>
       {/* Course Category */}
       <div className="flex flex-col space-y-2">
-        <label className="text-sm text-richblack-5" htmlFor="courseCategory">
-          Course Category <sup className="text-pink-200">*</sup>
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="text-sm text-richblack-5" htmlFor="courseCategory">
+            Course Category <sup className="text-pink-200">*</sup>
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowCategoryModal(true)}
+            className="text-xs text-yellow-50 hover:text-yellow-100 underline"
+          >
+            + Create New Category
+          </button>
+        </div>
         <select
           {...register("courseCategory", { required: true })}
           defaultValue=""
@@ -237,7 +278,7 @@ export default function CourseInformationForm() {
           {!loading &&
             courseCategories?.map((category, indx) => (
               <option key={indx} value={category?._id}>
-                {category?.name}
+                {category?.name} {category?.isSystemCategory === false ? "(Custom)" : ""}
               </option>
             ))}
         </select>
@@ -311,5 +352,70 @@ export default function CourseInformationForm() {
         </IconBtn>
       </div>
     </form>
+
+    {/* Category Creation Modal */}
+    {showCategoryModal && (
+      <div className="fixed inset-0 z-[1000] !mt-0 grid h-screen w-screen place-items-center overflow-auto bg-white bg-opacity-10 backdrop-blur-sm">
+        <div className="my-10 w-11/12 max-w-[500px] rounded-lg border border-richblack-400 bg-richblack-800">
+          {/* Modal Header */}
+          <div className="flex items-center justify-between rounded-t-lg bg-richblack-700 p-5">
+            <h2 className="text-xl font-semibold text-richblack-5">
+              Create New Category
+            </h2>
+            <button onClick={() => setShowCategoryModal(false)}>
+              <RxCross2 className="text-2xl text-richblack-5" />
+            </button>
+          </div>
+
+          {/* Modal Form */}
+          <div className="p-6 space-y-6">
+            {/* Category Name */}
+            <div className="flex flex-col space-y-2">
+              <label className="text-sm font-medium text-richblack-5" htmlFor="newCategoryName">
+                Category Name <sup className="text-pink-200">*</sup>
+              </label>
+              <input
+                id="newCategoryName"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Enter category name"
+                className="form-style w-full"
+              />
+            </div>
+
+            {/* Category Description */}
+            <div className="flex flex-col space-y-2">
+              <label className="text-sm font-medium text-richblack-5" htmlFor="newCategoryDescription">
+                Description (Optional)
+              </label>
+              <textarea
+                id="newCategoryDescription"
+                value={newCategoryDescription}
+                onChange={(e) => setNewCategoryDescription(e.target.value)}
+                placeholder="Enter category description"
+                className="form-style resize-none min-h-[100px] w-full"
+              />
+            </div>
+
+            {/* Form Actions */}
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowCategoryModal(false)}
+                className="rounded-md bg-richblack-600 px-4 py-2 text-sm font-medium text-richblack-300 hover:bg-richblack-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateCategory}
+                className="rounded-md bg-yellow-50 px-4 py-2 text-sm font-medium text-richblack-900 hover:bg-yellow-100"
+              >
+                Create Category
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   )
 }

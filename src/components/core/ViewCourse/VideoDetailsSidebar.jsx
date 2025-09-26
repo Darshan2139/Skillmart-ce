@@ -5,10 +5,15 @@ import { useSelector } from "react-redux"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 
 import IconBtn from "../../common/IconBtn"
+import QuizAttemptModal from "../Dashboard/StudentDashboard/QuizAttemptModal"
+import AssignmentSubmissionModal from "../Dashboard/StudentDashboard/AssignmentSubmissionModal"
 
 export default function VideoDetailsSidebar({ setReviewModal }) {
   const [activeStatus, setActiveStatus] = useState("")
   const [videoBarActive, setVideoBarActive] = useState("")
+  const [selectedAssignment, setSelectedAssignment] = useState(null)
+  const [attemptModal, setAttemptModal] = useState(false)
+  const [submissionModal, setSubmissionModal] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const { sectionId, subSectionId } = useParams()
@@ -37,6 +42,24 @@ export default function VideoDetailsSidebar({ setReviewModal }) {
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseSectionData, courseEntireData, location.pathname])
+
+  const handleAttemptAssignment = (assignment) => {
+    console.log("Attempting assignment:", assignment);
+    console.log("Assignment type:", assignment.type);
+    console.log("Assignment questions:", assignment.questions);
+    setSelectedAssignment(assignment)
+    if (assignment.type === "Quiz") {
+      setAttemptModal(true)
+    } else {
+      setSubmissionModal(true)
+    }
+  }
+
+  const handleSubmissionComplete = () => {
+    setAttemptModal(false)
+    setSubmissionModal(false)
+    setSelectedAssignment(null)
+  }
 
   return (
     <>
@@ -120,12 +143,62 @@ export default function VideoDetailsSidebar({ setReviewModal }) {
                       {topic.title}
                     </div>
                   ))}
+                  
+                  {/* Show Assignments for this Section */}
+                  {Array.isArray(course.assignments) && course.assignments.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {course.assignments.map((assignment) => (
+                        <div 
+                          key={assignment._id} 
+                          className="flex items-center justify-between border-b-2 border-b-richblack-600 py-2 cursor-pointer hover:bg-richblack-700 rounded-md px-2 transition-colors"
+                          onClick={() => handleAttemptAssignment(assignment)}
+                        >
+                          <div className="flex items-center gap-x-3">
+                            <div className="text-yellow-400">
+                              {assignment.type === "Quiz" ? "📝" : "📋"}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-yellow-400">{assignment.title}</p>
+                              <p className="text-xs text-richblack-300">Max: {assignment.maxMarks}</p>
+                            </div>
+                          </div>
+                          <div className="text-xs text-richblack-400">
+                            Click to attempt
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           ))}
         </div>
       </div>
+
+      {/* Quiz Attempt Modal */}
+      {attemptModal && selectedAssignment && (
+        <QuizAttemptModal
+          assignment={selectedAssignment}
+          onClose={() => {
+            setAttemptModal(false);
+            setSelectedAssignment(null);
+          }}
+          onComplete={handleSubmissionComplete}
+        />
+      )}
+
+      {/* Assignment Submission Modal */}
+      {submissionModal && selectedAssignment && (
+        <AssignmentSubmissionModal
+          assignment={selectedAssignment}
+          onClose={() => {
+            setSubmissionModal(false);
+            setSelectedAssignment(null);
+          }}
+          onComplete={handleSubmissionComplete}
+        />
+      )}
     </>
   )
 }

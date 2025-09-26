@@ -91,7 +91,7 @@ function Home() {
               active: false,
             }}
             codeColor={"text-yellow-25"}
-            codeblock={`<!DOCTYPE html>\n<head><meta charset="UTF-8"><title>SkillMart Team</title></head>\n<body>\n<h1>SkillMart</h1>\n<h2>Frontend Team</h2><ul><li>Darshan</li><li>Dharmik</li></ul>\n<h2>Backend Team</h2><ul><li>Mubin</li><li>Rohit</li></ul>\n</body>\n</html>`}
+            codeblock={`<!DOCTYPE html>\n<head><meta charset="UTF-8"><title>SkillMart Team</title></head>\n<body>\n<h1>SkillMart</h1>\n<h2>Frontend Team</h2><ul><li>Dharmit</li><li>Kedar</li></ul>\n<h2>Backend Team</h2><ul><li>Darshan</li><li>Shreya</li></ul>\n</body>\n</html>`}
             backgroundGradient={<div className="codeblock1 absolute"></div>}
           />
         </div>

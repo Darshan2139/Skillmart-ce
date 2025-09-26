@@ -268,6 +268,12 @@ export const deleteSubSection = async (data, token) => {
 export async function fetchInstructorCourses(token) {
   const toastId = toast.loading("Loading...")
   try {
+    // Check if token exists
+    if (!token) {
+      console.error("No token provided for fetchInstructorCourses");
+      throw new Error("Authentication token is required");
+    }
+
     const response = await apiConnector(
       "GET",
       courseEndpoints.GET_ALL_INSTRUCTOR_COURSES_API,

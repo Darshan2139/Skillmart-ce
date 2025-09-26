@@ -21,6 +21,9 @@ const {
   showAllCategories,
   createCategory,
   categoryPageDetails,
+  getUserCategories,
+  updateCategory,
+  deleteCategory,
 } = require("../controllers/Category")
 
 // Sections Controllers Import
@@ -78,12 +81,14 @@ router.delete("/deleteCourse", auth, isInstructor, deleteCourse)
 router.post("/updateCourseProgress", auth, isStudent, updateCourseProgress);
 
 // ********************************************************************************************************
-//                                      Category routes (Only by Admin)
+//                                      Category routes
 // ********************************************************************************************************
-// Category can Only be Created by Admin
-// TODO: Put IsAdmin Middleware here
-router.post("/createCategory", auth, isAdmin, createCategory)
+// Category can be Created by Admin or Instructor
+router.post("/createCategory", auth, createCategory)
 router.get("/showAllCategories", showAllCategories)
+router.get("/getUserCategories", auth, getUserCategories)
+router.put("/updateCategory/:categoryId", auth, updateCategory)
+router.delete("/deleteCategory/:categoryId", auth, deleteCategory)
 router.post("/getCategoryPageDetails", categoryPageDetails)
 
 module.exports = router

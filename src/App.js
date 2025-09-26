@@ -28,6 +28,10 @@ import CourseDetails from "./pages/CourseDetails";
 import ViewCourse from "./pages/ViewCourse";
 import VideoDetails from "./components/core/ViewCourse/VideoDetails";
 import Instructor from "./components/core/Dashboard/InstructorDashboard/Instructor";
+import Assignments from "./components/core/Dashboard/StudentDashboard/Assignments";
+import AssignmentManagement from "./components/core/Dashboard/InstructorDashboard/AssignmentManagement";
+import CategoryManagement from "./components/core/Dashboard/InstructorDashboard/CategoryManagement";
+import Chatbot from "./components/core/Chatbot/Chatbot";
 
 function App() {
 
@@ -116,6 +120,8 @@ function App() {
           <>
           <Route path="dashboard/cart" element={<Cart />} />
           <Route path="dashboard/enrolled-courses" element={<EnrolledCourses />} />
+          <Route path="dashboard/assignments" element={<Assignments />} />
+          <Route path="dashboard/assignments/:courseId" element={<Assignments />} />
           </>
         )
       }
@@ -127,7 +133,9 @@ function App() {
           <Route path="dashboard/add-course" element={<AddCourse />} />
           <Route path="dashboard/my-courses" element={<MyCourses />} />
           <Route path="dashboard/edit-course/:courseId" element={<EditCourse />} />
-          
+          <Route path="dashboard/assignment-management" element={<AssignmentManagement />} />
+          <Route path="dashboard/assignment-management/:courseId" element={<AssignmentManagement />} />
+          <Route path="dashboard/category-management" element={<CategoryManagement />} />
           </>
         )
       }
@@ -161,6 +169,9 @@ function App() {
 
 
     </Routes>
+    
+    {/* Chatbot Component - Available on all pages */}
+    <Chatbot />
 
    </div>
   );

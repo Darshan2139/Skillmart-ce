@@ -41,4 +41,25 @@ export const sidebarLinks = [
     type: ACCOUNT_TYPE.STUDENT,
     icon: "VscHistory",
   },
+  {
+    id: 7,
+    name: "Assignments",
+    path: "/dashboard/assignments",
+    type: ACCOUNT_TYPE.STUDENT,
+    icon: "VscFile",
+  },
+  {
+    id: 8,
+    name: "Assignment Management",
+    path: "/dashboard/assignment-management",
+    type: ACCOUNT_TYPE.INSTRUCTOR,
+    icon: "VscTasklist",
+  },
+  {
+    id: 9,
+    name: "Category Management",
+    path: "/dashboard/category-management",
+    type: ACCOUNT_TYPE.INSTRUCTOR,
+    icon: "VscTag",
+  },
 ];

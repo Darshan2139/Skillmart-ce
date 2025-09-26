@@ -1,0 +1,234 @@
+/* Custom styles for chatbot formatting */
+.chatbot-message {
+  line-height: 1.6;
+}
+
+.chatbot-message h1,
+.chatbot-message h2,
+.chatbot-message h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.chatbot-message h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #06D6A0;
+  border-bottom: 2px solid #06D6A0;
+  padding-bottom: 0.5rem;
+}
+
+.chatbot-message h2 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #06D6A0;
+  border-bottom: 2px solid #06D6A0;
+  padding-bottom: 0.25rem;
+}
+
+.chatbot-message h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #44E4BF;
+  border-bottom: 1px solid #585D69;
+  padding-bottom: 0.25rem;
+}
+
+.chatbot-message code {
+  background-color: #161D29;
+  color: #44E4BF;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-family: 'Roboto Mono', monospace;
+  border: 1px solid #2C333F;
+}
+
+.chatbot-message pre {
+  background-color: #161D29;
+  border: 1px solid #2C333F;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+}
+
+.chatbot-message pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #44E4BF;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.chatbot-message ul,
+.chatbot-message ol {
+  margin: 0.5rem 0;
+  padding-left: 0;
+}
+
+.chatbot-message li {
+  margin: 0.5rem 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.chatbot-message blockquote {
+  border-left: 4px solid #06D6A0;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  background-color: rgba(6, 214, 160, 0.1);
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
+  font-style: italic;
+}
+
+.chatbot-message table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background-color: #161D29;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.chatbot-message th,
+.chatbot-message td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #2C333F;
+}
+
+.chatbot-message th {
+  background-color: #2C333F;
+  font-weight: 600;
+  color: #06D6A0;
+}
+
+.chatbot-message tr:hover {
+  background-color: rgba(6, 214, 160, 0.05);
+}
+
+/* Animation for new messages */
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chatbot-message {
+  animation: slideInFromBottom 0.3s ease-out;
+}
+
+/* Custom scrollbar for code blocks */
+.chatbot-message pre::-webkit-scrollbar {
+  height: 6px;
+}
+
+.chatbot-message pre::-webkit-scrollbar-track {
+  background: #2C333F;
+  border-radius: 3px;
+}
+
+.chatbot-message pre::-webkit-scrollbar-thumb {
+  background: #06D6A0;
+  border-radius: 3px;
+}
+
+.chatbot-message pre::-webkit-scrollbar-thumb:hover {
+  background: #44E4BF;
+}
+
+/* Chatbot content container */
+.chatbot-content {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.chatbot-content p {
+  margin: 0.5rem 0;
+}
+
+.chatbot-content p:first-child {
+  margin-top: 0;
+}
+
+.chatbot-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Improved list styling */
+.chatbot-content .flex {
+  margin: 0.25rem 0;
+}
+
+.chatbot-content .flex:first-child {
+  margin-top: 0;
+}
+
+.chatbot-content .flex:last-child {
+  margin-bottom: 0;
+}
+
+/* Better spacing for headers */
+.chatbot-content h1:first-child,
+.chatbot-content h2:first-child,
+.chatbot-content h3:first-child {
+  margin-top: 0;
+}
+
+/* Code block improvements */
+.chatbot-content pre {
+  position: relative;
+}
+
+.chatbot-content pre::before {
+  content: 'Code';
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(6, 214, 160, 0.2);
+  color: #06D6A0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Message animations */
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.chatbot-message {
+  animation: messageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Typing indicator improvements */
+.typing-indicator {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

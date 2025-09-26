@@ -5,14 +5,17 @@ import { MdEdit } from "react-icons/md"
 import { RiDeleteBin6Line } from "react-icons/ri"
 import { RxDropdownMenu } from "react-icons/rx"
 import { useDispatch, useSelector } from "react-redux"
+import { toast } from "react-hot-toast"
 
 import {
   deleteSection,
   deleteSubSection,
 } from "../../../../../services/operations/courseDetailsAPI"
+import { deleteAssignment as deleteAssignmentApi } from "../../../../../services/operations/assignmentAPI"
 import { setCourse } from "../../../../../slices/courseSlice"
 import ConfirmationModal from "../../../../common/ConfirmationModal"
 import SubSectionModal from "./SubSectionModal"
+import AssignmentModal from "./AssignmentModal"
 
 export default function NestedView({ handleChangeEditSectionName }) {
   const { course } = useSelector((state) => state.course)
@@ -22,8 +25,36 @@ export default function NestedView({ handleChangeEditSectionName }) {
   const [addSubSection, setAddSubsection] = useState(null)
   const [viewSubSection, setViewSubSection] = useState(null)
   const [editSubSection, setEditSubSection] = useState(null)
+  // Assignment modal states
+  const [addAssignment, setAddAssignment] = useState(null)
+  const [viewAssignment, setViewAssignment] = useState(null)
+  const [editAssignment, setEditAssignment] = useState(null)
   // to keep track of confirmation modal
   const [confirmationModal, setConfirmationModal] = useState(null)
+
+  const handleDeleteAssignment = async (assignmentId, sectionId) => {
+    try {
+      const res = await deleteAssignmentApi(assignmentId, token)
+      // deleteAssignmentApi returns response.data already; check res.success
+      if (res?.success) {
+        // update local course state to remove the assignment
+        const updatedCourse = {
+          ...course,
+          courseContent: course.courseContent.map((sec) =>
+            sec._id === sectionId
+              ? { ...sec, assignments: (sec.assignments || []).filter((a) => a._id !== assignmentId) }
+              : sec
+          ),
+        }
+        dispatch(setCourse(updatedCourse))
+        toast.success(res?.message || "Deleted successfully")
+      } else {
+        toast.error(res?.message || "Failed to delete")
+      }
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Failed to delete")
+    }
+  }
 
   const handleDeleleSection = async (sectionId) => {
     const result = await deleteSection({
@@ -147,6 +178,64 @@ export default function NestedView({ handleChangeEditSectionName }) {
                 <FaPlus className="text-lg" />
                 <p>Add Lecture</p>
               </button>
+
+              {/* Existing Assignments/Quizzes */}
+              {Array.isArray(section.assignments) && section.assignments.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {section.assignments.map((assn) => (
+                    <div key={assn._id} className="flex items-center justify-between border-b-2 border-b-richblack-600 py-2">
+                      <div className="flex items-center gap-x-3">
+                        <RxDropdownMenu className="text-2xl text-richblack-50" />
+                        <div>
+                          <p className="font-semibold text-richblack-50">{assn.title} <span className="text-xs text-richblack-300">({assn.type})</span></p>
+                          <p className="text-xs text-richblack-300">Max: {assn.maxMarks}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-x-3">
+                        <button onClick={() => setViewAssignment(assn)} className="text-sm text-richblack-300">View</button>
+                        <button onClick={() => setEditAssignment(assn)}>
+                          <MdEdit className="text-xl text-richblack-300" />
+                        </button>
+                        <button
+                          onClick={() =>
+                            setConfirmationModal({
+                              text1: `Delete this ${assn.type}?`,
+                              text2: "This action cannot be undone",
+                              btn1Text: "Delete",
+                              btn2Text: "Cancel",
+                              btn1Handler: () => {
+                                handleDeleteAssignment(assn._id, section._id)
+                                setConfirmationModal(null)
+                              },
+                              btn2Handler: () => setConfirmationModal(null),
+                            })
+                          }
+                        >
+                          <RiDeleteBin6Line className="text-xl text-richblack-300" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add Assignment/Quiz to Section */}
+              <div className="mt-3 flex gap-x-2">
+                <button
+                  onClick={() => setAddAssignment({ sectionId: section._id, type: "Assignment" })}
+                  className="flex items-center gap-x-1 rounded-md bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+                >
+                  <FaPlus className="text-sm" />
+                  <p>Add Assignment</p>
+                </button>
+                <button
+                  onClick={() => setAddAssignment({ sectionId: section._id, type: "Quiz" })}
+                  className="flex items-center gap-x-1 rounded-md bg-green-600 px-3 py-1 text-sm text-white hover:bg-green-700"
+                >
+                  <FaPlus className="text-sm" />
+                  <p>Add Quiz</p>
+                </button>
+              </div>
             </div>
           </details>
         ))}
@@ -168,6 +257,24 @@ export default function NestedView({ handleChangeEditSectionName }) {
         <SubSectionModal
           modalData={editSubSection}
           setModalData={setEditSubSection}
+          edit={true}
+        />
+      ) : addAssignment ? (
+        <AssignmentModal
+          modalData={addAssignment}
+          setModalData={setAddAssignment}
+          add={true}
+        />
+      ) : viewAssignment ? (
+        <AssignmentModal
+          modalData={viewAssignment}
+          setModalData={setViewAssignment}
+          view={true}
+        />
+      ) : editAssignment ? (
+        <AssignmentModal
+          modalData={editAssignment}
+          setModalData={setEditAssignment}
           edit={true}
         />
       ) : (

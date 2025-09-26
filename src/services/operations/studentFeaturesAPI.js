@@ -57,7 +57,7 @@ export async function buyCourse(token, courses, userDetails, navigate, dispatch)
 
         // Configure Razorpay options
         const options = {
-            key: "rzp_test_M1kfbj6xrNnFyJ",
+            key: "rzp_test_RFrolz0ogkWwPJ",
             amount: amount,
             currency: currency || "INR",
             name: "SkillMart",

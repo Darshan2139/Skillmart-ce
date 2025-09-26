@@ -20,6 +20,12 @@ export default function Instructor() {
   const fetchData = async () => {
     setLoading(true)
     try {
+      // Check if token exists
+      if (!token) {
+        console.error("No token available for fetchData");
+        return;
+      }
+
       // Fetch instructor data
       const instructorApiData = await getInstructorData(token)
       console.log("Instructor API Data:", instructorApiData)
