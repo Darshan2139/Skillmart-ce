@@ -25,9 +25,17 @@ database.connect();
 //middlewares
 app.use(express.json());
 app.use(cookieParser());
+const allowedOrigins = process.env.CORS_ORIGIN
+	? process.env.CORS_ORIGIN.split(",")
+	: [
+		"http://localhost:3000",
+		"http://localhost:3001",
+		"https://skillmart-client.onrender.com",
+	];
+
 app.use(
 	cors({
-		origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : ["http://localhost:3000", "http://localhost:3001"],
+		origin: allowedOrigins,
 		credentials: true,
 	})
 )
