@@ -286,7 +286,7 @@ exports.sendotp = async (req, res) => {
 
     // Check for recent OTP requests to prevent spam
     const recentOTP = await OTP.findOne({ 
-      email, 
+      email: email.toLowerCase().trim(), 
       createdAt: { $gte: new Date(Date.now() - 60000) } // Last 1 minute
     })
 
