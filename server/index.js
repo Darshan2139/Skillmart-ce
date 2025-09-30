@@ -69,6 +69,16 @@ app.get("/", (req, res) => {
 	});
 });
 
+// Lightweight health endpoint for quick wake-ups from frontend
+app.get("/health", (req, res) => {
+	return res.status(200).json({
+		success: true,
+		uptime: process.uptime(),
+		timestamp: Date.now(),
+		message: "OK"
+	});
+});
+
 // Test endpoint to check environment variables
 app.get("/test-env", (req, res) => {
 	return res.json({
