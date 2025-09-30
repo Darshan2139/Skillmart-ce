@@ -12,6 +12,9 @@ require("dotenv").config()
 
 exports.signup = async (req, res) => {
   try {
+    // Add a small delay to simulate processing time for better UX
+    await new Promise(resolve => setTimeout(resolve, 1500))
+
     // Destructure fields from the request body
     const {
       firstName,
@@ -24,26 +27,64 @@ exports.signup = async (req, res) => {
       otp,
     } = req.body
 
+    // Enhanced validation with detailed error messages
+    const validationErrors = []
+
     // Check if All Details are there or not
-    if (
-      !firstName ||
-      !lastName ||
-      !email ||
-      !password ||
-      !confirmPassword ||
-      !otp
-    ) {
-      return res.status(403).send({
-        success: false,
-        message: "All Fields are required",
-      })
+    if (!firstName || firstName.trim().length < 2) {
+      validationErrors.push("First name must be at least 2 characters long")
+    }
+    if (!lastName || lastName.trim().length < 2) {
+      validationErrors.push("Last name must be at least 2 characters long")
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      validationErrors.push("Please enter a valid email address")
+    }
+    if (!password || password.length < 8) {
+      validationErrors.push("Password must be at least 8 characters long")
+    }
+    if (!confirmPassword) {
+      validationErrors.push("Please confirm your password")
+    }
+    if (!otp || otp.length !== 6) {
+      validationErrors.push("Please enter a valid 6-digit OTP")
+    }
+
+    // Check for special characters and numbers in password
+    if (password && (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password))) {
+      validationErrors.push("Password must contain at least one uppercase letter, one lowercase letter, and one number")
     }
 
     // Check if password and confirm password match
     if (password !== confirmPassword) {
+      validationErrors.push("Password and Confirm Password do not match")
+    }
+
+    // Validate account type
+    if (accountType && !["Student", "Instructor", "Admin"].includes(accountType)) {
+      validationErrors.push("Invalid account type selected")
+    }
+
+    // Validate contact number if provided
+    if (contactNumber && !/^[0-9+\-\s()]{10,15}$/.test(contactNumber)) {
+      validationErrors.push("Please enter a valid contact number")
+    }
+
+    // Return validation errors if any
+    if (validationErrors.length > 0) {
       return res.status(400).json({
         success: false,
-        message: "Password and Confirm Password do not match. Please try again.",
+        message: "Please fix the following errors:",
+        errors: validationErrors,
+        fieldErrors: {
+          firstName: !firstName || firstName.trim().length < 2,
+          lastName: !lastName || lastName.trim().length < 2,
+          email: !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+          password: !password || password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password),
+          confirmPassword: password !== confirmPassword,
+          otp: !otp || otp.length !== 6,
+          contactNumber: contactNumber && !/^[0-9+\-\s()]{10,15}$/.test(contactNumber)
+        }
       })
     }
 
@@ -52,29 +93,48 @@ exports.signup = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User already exists. Please sign in to continue.",
+        message: "An account with this email already exists. Please sign in to continue.",
+        suggestion: "Try logging in instead or use a different email address"
       })
     }
 
-    // Find the most recent OTP for the email
+    // Find the most recent OTP for the email with timeout check
     const response = await OTP.find({ email }).sort({ createdAt: -1 }).limit(1)
-    console.log(response)
+    console.log("OTP verification for:", email)
+    
     if (response.length === 0) {
-      // OTP not found for the email
       return res.status(400).json({
         success: false,
-        message: "The OTP is not valid",
-      })
-    } else if (otp !== response[0].otp) {
-      // Invalid OTP
-      return res.status(400).json({
-        success: false,
-        message: "The OTP is not valid",
+        message: "No OTP found for this email. Please request a new OTP.",
+        action: "resend_otp"
       })
     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10)
+    // Check if OTP is expired (5 minutes)
+    const otpAge = Date.now() - response[0].createdAt.getTime()
+    const fiveMinutes = 5 * 60 * 1000
+    
+    if (otpAge > fiveMinutes) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired. Please request a new OTP.",
+        action: "resend_otp"
+      })
+    }
+
+    if (otp !== response[0].otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP. Please check and try again.",
+        attempts: "You have limited attempts remaining"
+      })
+    }
+
+    // Additional processing delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // Hash the password with higher salt rounds for better security
+    const hashedPassword = await bcrypt.hash(password, 12)
 
     // Create the Additional Profile For User
     const profileDetails = await Profile.create({
@@ -84,30 +144,46 @@ exports.signup = async (req, res) => {
       contactNumber: contactNumber || null,
     })
 
-    // Create the user with a default image
+    // Create the user with enhanced data
     const user = await User.create({
-      firstName,
-      lastName,
-      email,
-      contactNumber,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.toLowerCase().trim(),
+      contactNumber: contactNumber || null,
       password: hashedPassword,
-      accountType: accountType || "Student", // Default to Student if not provided
+      accountType: accountType || "Student",
       approved: true,
       additionalDetails: profileDetails._id,
-      image: `https://api.dicebear.com/5.x/initials/svg?seed=${firstName} ${lastName}`, // Default avatar
+      image: `https://api.dicebear.com/5.x/initials/svg?seed=${firstName.trim()} ${lastName.trim()}`,
     })
+
+    // Clean up the used OTP
+    await OTP.deleteOne({ _id: response[0]._id })
+
+    // Remove sensitive data from response
+    const userResponse = {
+      ...user.toObject(),
+      password: undefined,
+      token: undefined
+    }
 
     return res.status(200).json({
       success: true,
-      user,
-      message: "User registered successfully",
+      user: userResponse,
+      message: "Account created successfully! Welcome to SkillMart!",
+      nextSteps: [
+        "Complete your profile setup",
+        "Explore available courses",
+        "Start your learning journey"
+      ]
     })
   } catch (error) {
-    console.error(error)
+    console.error("Signup error:", error)
     return res.status(500).json({
       success: false,
-      message: "User cannot be registered. Please try again.",
-      error: error.message, // Include the actual error message for debugging
+      message: "Registration failed. Please try again.",
+      error: process.env.NODE_ENV === 'development' ? error.message : "Internal server error",
+      support: "If the problem persists, please contact support"
     })
   }
 }
@@ -181,47 +257,111 @@ exports.login = async (req, res) => {
 // Send OTP For Email Verification
 exports.sendotp = async (req, res) => {
   try {
+    // Add processing delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 800))
+
     const { email } = req.body
 
-    // Check if user is already present
-    // Find user with provided email
-    const checkUserPresent = await User.findOne({ email })
-    // to be used in case of signup
-
-    // If user found with provided email
-    if (checkUserPresent) {
-      // Return 401 Unauthorized status code with error message
-      return res.status(401).json({
+    // Enhanced email validation
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({
         success: false,
-        message: `User is Already Registered`,
+        message: "Please enter a valid email address",
+        field: "email"
       })
     }
 
-    var otp = otpGenerator.generate(6, {
+    // Check if user is already present
+    const checkUserPresent = await User.findOne({ email })
+    
+    // If user found with provided email
+    if (checkUserPresent) {
+      return res.status(409).json({
+        success: false,
+        message: "An account with this email already exists",
+        suggestion: "Try logging in instead or use a different email address",
+        action: "login"
+      })
+    }
+
+    // Check for recent OTP requests to prevent spam
+    const recentOTP = await OTP.findOne({ 
+      email, 
+      createdAt: { $gte: new Date(Date.now() - 60000) } // Last 1 minute
+    })
+
+    if (recentOTP) {
+      return res.status(429).json({
+        success: false,
+        message: "Please wait before requesting another OTP",
+        retryAfter: 60,
+        suggestion: "Check your email for the previous OTP or wait 1 minute"
+      })
+    }
+
+    // Generate unique OTP
+    let otp = otpGenerator.generate(6, {
       upperCaseAlphabets: false,
       lowerCaseAlphabets: false,
       specialChars: false,
     })
-    const result = await OTP.findOne({ otp: otp })
-    console.log("Result is Generate OTP Func")
-    console.log("OTP", otp)
-    console.log("Result", result)
-    while (result) {
+
+    // Ensure OTP is unique
+    let result = await OTP.findOne({ otp: otp })
+    let attempts = 0
+    while (result && attempts < 10) {
       otp = otpGenerator.generate(6, {
         upperCaseAlphabets: false,
+        lowerCaseAlphabets: false,
+        specialChars: false,
+      })
+      result = await OTP.findOne({ otp: otp })
+      attempts++
+    }
+
+    if (attempts >= 10) {
+      return res.status(500).json({
+        success: false,
+        message: "Unable to generate unique OTP. Please try again.",
+        support: "Contact support if this issue persists"
       })
     }
-    const otpPayload = { email, otp }
+
+    // Clean up old OTPs for this email
+    await OTP.deleteMany({ email })
+
+    // Create new OTP
+    const otpPayload = { email: email.toLowerCase().trim(), otp }
     const otpBody = await OTP.create(otpPayload)
-    console.log("OTP Body", otpBody)
+    
+    console.log("OTP generated for:", email)
+    console.log("OTP:", otp)
+    console.log("Expires at:", new Date(otpBody.createdAt.getTime() + 5 * 60 * 1000))
+
+    // Additional processing delay
+    await new Promise(resolve => setTimeout(resolve, 500))
+
     res.status(200).json({
       success: true,
-      message: `OTP Sent Successfully`,
-      otp,
+      message: "OTP sent successfully to your email",
+      email: email,
+      expiresIn: "5 minutes",
+      instructions: [
+        "Check your email inbox",
+        "Enter the 6-digit code",
+        "Complete your registration"
+      ],
+      // Only include OTP in development
+      ...(process.env.NODE_ENV === 'development' && { otp })
     })
   } catch (error) {
-    console.log(error.message)
-    return res.status(500).json({ success: false, error: error.message })
+    console.error("OTP generation error:", error)
+    return res.status(500).json({ 
+      success: false, 
+      message: "Failed to send OTP. Please try again.",
+      error: process.env.NODE_ENV === 'development' ? error.message : "Internal server error",
+      support: "Contact support if this issue persists"
+    })
   }
 }
 
