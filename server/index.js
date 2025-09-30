@@ -10,6 +10,7 @@ const contactUsRoute = require("./routes/Contact");
 const assignmentRoutes = require("./routes/Assignment");
 const chatbotRoutes = require("./routes/Chatbot");
 const projectInfoRoutes = require("./routes/ProjectInfo");
+const modelTestRoutes = require("./routes/ModelTest");
 const database = require("./config/database");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -59,6 +60,7 @@ app.use("/api/v1/reach", contactUsRoute);
 app.use("/api/v1/assignment", assignmentRoutes);
 app.use("/api/v1/chatbot", chatbotRoutes);
 app.use("/api/v1/project", projectInfoRoutes);
+app.use("/api/v1/test", modelTestRoutes);
 
 //def route
 
