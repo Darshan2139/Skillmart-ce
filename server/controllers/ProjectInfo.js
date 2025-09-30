@@ -180,7 +180,7 @@ const chatWithBotEnhanced = async (req, res) => {
     Provide simple, direct, and helpful answers to questions related to study, academic problems, and SkillMart platform navigation and features.`;
 
     // Get the generative model
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
     // Start a chat session with the enhanced system prompt
     const chat = model.startChat({
