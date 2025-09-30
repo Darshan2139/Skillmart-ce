@@ -65,7 +65,7 @@ const chatWithBot = async (req, res) => {
         }
 
         // Get the generative model
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
         // Start a chat session with the system prompt
         const chat = model.startChat({
